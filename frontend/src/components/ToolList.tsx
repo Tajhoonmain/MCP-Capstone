@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Wrench } from "lucide-react";
+import { Wrench, Calculator, Calendar, BookOpen, TrendingUp, CheckSquare, User, Award } from "lucide-react";
 
 interface ToolListProps {
   tools: string[];
@@ -8,6 +8,51 @@ interface ToolListProps {
 }
 
 const ToolList: React.FC<ToolListProps> = ({ tools, selectedTool }) => {
+  const getToolInfo = (toolName: string) => {
+    const toolMap: Record<string, { icon: any; color: string; description: string }> = {
+      "calculate_gpa": {
+        icon: Calculator,
+        color: "bg-[#10B981]/20 border-[#10B981]/40 text-[#10B981]",
+        description: "Calculate GPA from grades"
+      },
+      "check_exam_schedule": {
+        icon: Calendar,
+        color: "bg-[#F59E0B]/20 border-[#F59E0B]/40 text-[#F59E0B]",
+        description: "Get exam schedules"
+      },
+      "register_course": {
+        icon: BookOpen,
+        color: "bg-[#8B5CF6]/20 border-[#8B5CF6]/40 text-[#8B5CF6]",
+        description: "Register for courses"
+      },
+      "predict_grade": {
+        icon: TrendingUp,
+        color: "bg-[#EC4899]/20 border-[#EC4899]/40 text-[#EC4899]",
+        description: "Predict final grades"
+      },
+      "track_assignment": {
+        icon: CheckSquare,
+        color: "bg-[#14B8A6]/20 border-[#14B8A6]/40 text-[#14B8A6]",
+        description: "Track assignments"
+      },
+      "get_student_info": {
+        icon: User,
+        color: "bg-[#6366F1]/20 border-[#6366F1]/40 text-[#6366F1]",
+        description: "View student information"
+      },
+      "calculate_credits_needed": {
+        icon: Award,
+        color: "bg-[#F97316]/20 border-[#F97316]/40 text-[#F97316]",
+        description: "Calculate graduation credits"
+      }
+    };
+    return toolMap[toolName] || {
+      icon: Wrench,
+      color: "bg-[#475569]/20 border-[#475569]/40 text-[#475569]",
+      description: "Unknown tool"
+    };
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -45,35 +90,49 @@ const ToolList: React.FC<ToolListProps> = ({ tools, selectedTool }) => {
           </p>
         </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div className="space-y-3 max-h-80 overflow-y-auto">
           {tools.map((tool, index) => {
             const isActive = tool === selectedTool;
+            const toolInfo = getToolInfo(tool);
+            const Icon = toolInfo.icon;
+            
             return (
               <motion.div
                 key={tool}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                title={tool}
                 className={`
-                  relative px-3 py-1.5 rounded-lg text-xs font-medium cursor-default
-                  border transition-all duration-200 group
+                  relative p-3 rounded-lg border cursor-pointer transition-all duration-200
                   ${
                     isActive
-                      ? "bg-[#6366F1]/20 border-[#6366F1] text-[#A5B4FC] shadow-[0_0_12px_rgba(99,102,241,0.3)]"
-                      : "bg-[#1E2535] border-[#2A3044] text-[#64748B] hover:border-[#6366F1]/50 hover:text-[#94A3B8] hover:shadow-[0_0_8px_rgba(99,102,241,0.15)]"
+                      ? "bg-[#6366F1]/10 border-[#6366F1] shadow-[0_0_12px_rgba(99,102,241,0.3)]"
+                      : "bg-[#1E2535] border-[#2A3044] hover:border-[#6366F1]/50 hover:bg-[#0F1117] hover:shadow-[0_0_8px_rgba(99,102,241,0.15)]"
                   }
                 `}
-                style={{ fontFamily: "JetBrains Mono, monospace" }}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTool"
-                    className="absolute inset-0 rounded-lg bg-[#6366F1]/10"
-                    transition={{ type: "spring", bounce: 0.2 }}
-                  />
-                )}
-                <span className="relative z-10">{tool}</span>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${toolInfo.color}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-[#E2E8F0]" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                        {tool.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </p>
+                      {isActive && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-2 h-2 rounded-full bg-[#10B981]"
+                        />
+                      )}
+                    </div>
+                    <p className="text-xs text-[#64748B]" style={{ fontFamily: "Manrope, sans-serif" }}>
+                      {toolInfo.description}
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             );
           })}

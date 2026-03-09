@@ -81,10 +81,54 @@ async def run_query(user_query: str) -> dict:
 def _decide_tool(query: str, tool_names: list) -> tuple:
     """Model Layer: Decide which tool to use based on the query."""
     q = query.lower()
+    
+    # GPA related queries
     if "gpa" in q or "calculate" in q or "grade" in q:
         return "calculate_gpa", {"grades": ["A", "B", "A"]}
+    
+    # Exam schedule queries
     elif "exam" in q or "schedule" in q or "when" in q:
         return "check_exam_schedule", {"course_code": "AI407"}
+    
+    # Course registration queries
+    elif any(word in q for word in ["register", "enroll", "add course", "sign up"]):
+        return "register_course", {
+            "course_code": "CS301",
+            "course_name": "Advanced Algorithms",
+            "credits": 3,
+            "semester": "Fall 2024"
+        }
+    
+    # Grade prediction queries
+    elif any(word in q for word in ["predict", "forecast", "what grade", "final grade"]):
+        return "predict_grade", {
+            "course_code": "AI407",
+            "current_grade": 82.5,
+            "assignments_remaining": 2,
+            "exam_weight": 0.4
+        }
+    
+    # Assignment tracking queries
+    elif any(word in q for word in ["assignment", "homework", "track", "deadline"]):
+        return "track_assignment", {
+            "assignment_name": "Machine Learning Project",
+            "course_code": "AI407",
+            "due_date": "2024-04-15",
+            "status": "in_progress"
+        }
+    
+    # Student information queries
+    elif any(word in q for word in ["student info", "profile", "my information", "who am i"]):
+        return "get_student_info", {"student_id": "ST1001"}
+    
+    # Credit calculation queries
+    elif any(word in q for word in ["credits", "graduate", "graduation", "how many"]):
+        return "calculate_credits_needed", {
+            "current_credits": 75,
+            "major": "Computer Science",
+            "target_year": "2025"
+        }
+    
     return "none", {}
 
 

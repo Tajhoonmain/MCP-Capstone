@@ -33,12 +33,78 @@ async def handle_list_tools():
                 },
                 "required": ["course_code"]
             }
+        ),
+        types.Tool(
+            name="register_course",
+            description="Register for a new course.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "course_code": {"type": "string"},
+                    "course_name": {"type": "string"},
+                    "credits": {"type": "integer"},
+                    "semester": {"type": "string"}
+                },
+                "required": ["course_code", "course_name", "credits", "semester"]
+            }
+        ),
+        types.Tool(
+            name="predict_grade",
+            description="Predict final grade based on current performance.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "course_code": {"type": "string"},
+                    "current_grade": {"type": "number"},
+                    "assignments_remaining": {"type": "integer"},
+                    "exam_weight": {"type": "number"}
+                },
+                "required": ["course_code", "current_grade", "assignments_remaining", "exam_weight"]
+            }
+        ),
+        types.Tool(
+            name="track_assignment",
+            description="Track assignment status and deadlines.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "assignment_name": {"type": "string"},
+                    "course_code": {"type": "string"},
+                    "due_date": {"type": "string"},
+                    "status": {"type": "string", "enum": ["pending", "in_progress", "completed", "submitted"]}
+                },
+                "required": ["assignment_name", "course_code", "due_date", "status"]
+            }
+        ),
+        types.Tool(
+            name="get_student_info",
+            description="Get student academic information.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "student_id": {"type": "string"}
+                },
+                "required": ["student_id"]
+            }
+        ),
+        types.Tool(
+            name="calculate_credits_needed",
+            description="Calculate credits needed for graduation.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "current_credits": {"type": "integer"},
+                    "major": {"type": "string"},
+                    "target_year": {"type": "string"}
+                },
+                "required": ["current_credits", "major", "target_year"]
+            }
         )
     ]
 
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict | None) -> types.CallToolResult:
-    """Task 1 & 2: Execute tools via the MCP protocol."""
+    """Execute tools via the MCP protocol."""
     if name == "calculate_gpa":
         grades = arguments.get("grades", [])
         pts = {"A": 4, "B": 3, "C": 2, "D": 1, "F": 0}
@@ -49,12 +115,96 @@ async def handle_call_tool(name: str, arguments: dict | None) -> types.CallToolR
         )
     elif name == "check_exam_schedule":
         course = arguments.get("course_code", "").upper()
-        time = {"AI407": "Monday 2:00 PM", "CS101": "Tuesday 10:00 AM"}.get(course, "Course not found.")
+        schedules = {
+            "AI407": "Monday 2:00 PM - Room 301",
+            "CS101": "Tuesday 10:00 AM - Room 205",
+            "MATH201": "Wednesday 3:00 PM - Room 412",
+            "ENG150": "Thursday 9:00 AM - Room 108",
+            "PHYS220": "Friday 1:00 PM - Room 302"
+        }
+        time = schedules.get(course, f"No exam schedule found for {course}")
         return types.CallToolResult(
             content=[types.TextContent(type="text", text=f"Exam for {course}: {time}")],
             isError=False
         )
-    raise ValueError(f"Tool not found: {name}")
+    elif name == "register_course":
+        course_code = arguments.get("course_code", "")
+        course_name = arguments.get("course_name", "")
+        credits = arguments.get("credits", 0)
+        semester = arguments.get("semester", "")
+        
+        # Simulate course registration
+        registration_id = f"REG{hash(course_code + semester) % 10000}"
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=f"Successfully registered for {course_code} ({course_name}) - {credits} credits - {semester}. Registration ID: {registration_id}")],
+            isError=False
+        )
+    elif name == "predict_grade":
+        course_code = arguments.get("course_code", "")
+        current_grade = arguments.get("current_grade", 0)
+        assignments_remaining = arguments.get("assignments_remaining", 0)
+        exam_weight = arguments.get("exam_weight", 0.4)
+        
+        # Simple grade prediction logic
+        assignment_weight = 1 - exam_weight
+        current_assignment_grade = current_grade / assignment_weight if assignment_weight > 0 else current_grade
+        predicted_final = (current_assignment_grade * assignment_weight) + (85 * exam_weight)  # Assume 85 on final exam
+        
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=f"Grade prediction for {course_code}: Current {current_grade} → Predicted Final: {round(predicted_final, 2)} (assuming 85 on final exam)")],
+            isError=False
+        )
+    elif name == "track_assignment":
+        assignment_name = arguments.get("assignment_name", "")
+        course_code = arguments.get("course_code", "")
+        due_date = arguments.get("due_date", "")
+        status = arguments.get("status", "pending")
+        
+        # Simulate assignment tracking
+        tracking_id = f"TRK{hash(assignment_name + course_code) % 10000}"
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=f"Assignment tracked: '{assignment_name}' for {course_code}. Due: {due_date}. Status: {status}. Tracking ID: {tracking_id}")],
+            isError=False
+        )
+    elif name == "get_student_info":
+        student_id = arguments.get("student_id", "")
+        
+        # Simulate student database lookup
+        students = {
+            "ST1001": {"name": "Alice Johnson", "major": "Computer Science", "year": "Junior", "gpa": 3.7, "credits": 75},
+            "ST1002": {"name": "Bob Smith", "major": "Mathematics", "year": "Sophomore", "gpa": 3.2, "credits": 45},
+            "ST1003": {"name": "Carol Davis", "major": "Physics", "year": "Senior", "gpa": 3.9, "credits": 110}
+        }
+        
+        info = students.get(student_id, {"name": "Unknown Student", "major": "Undeclared", "year": "Freshman", "gpa": 0.0, "credits": 0})
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=f"Student Info: {info['name']} - {info['major']} ({info['year']}) - GPA: {info['gpa']}, Credits: {info['credits']}")],
+            isError=False
+        )
+    elif name == "calculate_credits_needed":
+        current_credits = arguments.get("current_credits", 0)
+        major = arguments.get("major", "")
+        target_year = arguments.get("target_year", "")
+        
+        # Credit requirements by major
+        requirements = {
+            "Computer Science": 120,
+            "Mathematics": 115,
+            "Physics": 118,
+            "Engineering": 130,
+            "Biology": 122
+        }
+        
+        required = requirements.get(major, 120)
+        needed = max(0, required - current_credits)
+        semesters_needed = (needed / 15) + (1 if needed % 15 > 0 else 0)  # Assume 15 credits per semester
+        
+        return types.CallToolResult(
+            content=[types.TextContent(type="text", text=f"Credits needed for {major} graduation: {needed} more credits required (out of {required} total). Estimated {semesters_needed} semesters remaining to graduate by {target_year}.")],
+            isError=False
+        )
+    else:
+        raise ValueError(f"Tool not found: {name}")
 
 async def main():
     async with stdio_server() as (read, write):

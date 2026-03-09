@@ -6,6 +6,8 @@ import ContextCard from "@/components/ContextCard";
 import ToolList from "@/components/ToolList";
 import ExecutionPanel, { ExecutionStatus } from "@/components/ExecutionPanel";
 import ResponsePanel from "@/components/ResponsePanel";
+import QuickActions from "@/components/QuickActions";
+import HistoryPanel from "@/components/HistoryPanel";
 
 const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +18,7 @@ const Dashboard: React.FC = () => {
   const [parameters, setParameters] = useState<Record<string, unknown> | null>(null);
   const [responseData, setResponseData] = useState<Record<string, unknown> | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  const [queryHistory, setQueryHistory] = useState<Array<{query: string, timestamp: string, result: any}>>([]);
 
   const handleQuery = async (query: string) => {
     setIsLoading(true);
@@ -31,6 +34,13 @@ const Dashboard: React.FC = () => {
       setParameters(data.parameters ?? null);
       setResponseData(data.result ?? (data as unknown as Record<string, unknown>));
       setStatus("success");
+
+      // Add to history
+      setQueryHistory(prev => [
+        { query, timestamp: new Date().toISOString(), result: data.result },
+        ...prev.slice(0, 9) // Keep last 10 queries
+      ]);
+
     } catch (err: unknown) {
       const errorPayload =
         err && typeof err === "object"
@@ -49,6 +59,10 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuickAction = (action: string) => {
+    handleQuery(action);
   };
 
   return (
@@ -110,7 +124,7 @@ const Dashboard: React.FC = () => {
                   className="text-xs text-[#475569] mt-0.5"
                   style={{ fontFamily: "Manrope, sans-serif" }}
                 >
-                  Model Context Protocol · Tool Execution Dashboard
+                  Enhanced Academic Assistant • {tools.length} Tools Available
                 </p>
               </div>
             </div>
@@ -134,15 +148,16 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
           {/* Left Column — 40% */}
           <div className="lg:col-span-2 flex flex-col gap-6">
             <QueryInput onSubmit={handleQuery} isLoading={isLoading} />
             <ContextCard context={context} />
+            <QuickActions onAction={handleQuickAction} isLoading={isLoading} />
           </div>
 
-          {/* Right Column — 60% */}
-          <div className="lg:col-span-3 flex flex-col gap-6">
+          {/* Middle Column — 30% */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
             <ToolList tools={tools} selectedTool={selectedTool} />
             <ExecutionPanel
               status={status}
@@ -150,7 +165,12 @@ const Dashboard: React.FC = () => {
               parameters={parameters}
               errorMessage={errorMessage}
             />
+          </div>
+
+          {/* Right Column — 30% */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
             <ResponsePanel data={responseData} />
+            <HistoryPanel history={queryHistory} onQuery={handleQuery} />
           </div>
         </div>
       </main>
